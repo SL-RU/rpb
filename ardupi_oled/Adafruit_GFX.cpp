@@ -22,10 +22,14 @@
 						Added printf feature
 
  ******************************************************************/
+#include <iostream>
+#include <string>
+#include <glib.h>
 
 #include "./ArduiPi_OLED_lib.h"
 #include "./Adafruit_GFX.h"
 #include "./glcdfont.c"
+
 
 void Adafruit_GFX::constructor(int16_t w, int16_t h) 
 {
@@ -71,6 +75,23 @@ void Adafruit_GFX::print( const char * string)
 		write ( (uint8_t) *p++);
 	}
 
+}
+
+// the print function
+void Adafruit_GFX::print( const std::string string) 
+{
+
+  //std::string s = iconv_recode("UTF-8", "CP1251", string);
+
+  GError *error = NULL;
+  unsigned char *str = g_convert(string.c_str(), -1, "utf-8", "cp1251", NULL, NULL, error);
+  
+  
+  int n = s.length();
+  
+  for (int i = 0; i < n; i++) {
+    write ( (unsigned char) str[i]);
+  }
 }
 
 
@@ -495,16 +516,42 @@ size_t Adafruit_GFX::write(uint8_t c)
   return 1;
 }
 
+unsigned char lcd_symbol_decode(unsigned char c)
+{
+	if(32<=c&&c<='~')
+	{
+		c=c-32;
+	}
+	else
+	{
+		if(192<=c&&c<=255)
+		{
+			c=c-97;
+		}
+		else
+		{
+			c=255;
+		}
+	}
+	return c;
+}
+
+
 // draw a character
 void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size) 
 {
 
+  c=lcd_symbol_decode(c);
+
+  
   if((x >= _width)            || // Clip right
      (y >= _height)           || // Clip bottom
      ((x + 5 * size - 1) < 0) || // Clip left
      ((y + 8 * size - 1) < 0))   // Clip top
     return;
 
+  
+  
   for (int8_t i=0; i<6; i++ ) 
 	{
     uint8_t line;

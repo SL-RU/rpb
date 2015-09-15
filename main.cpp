@@ -1,14 +1,21 @@
 #include "hw.hpp"
-//#include <iostream>
 #include <thread>
+#include <iostream>
+#include <clocale>
+#include "gui.hpp"
 
 
 void Init();
 
+GUI *gui;
+GUIRect *gr;
+
 void prt(int p)
 {
   std::cout << p << "\n";
+  gr->x+=3;
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -28,9 +35,30 @@ int main(int argc, char *argv[])
 
   Buttons[4]->setOnClick(prt);
   Leds[0]->set(true);
+
+
+  gui = new GUI;
+  gr = new GUIRect(0, 20, 10, 40, gui);
+  gui->root->AddChild(gr);
   
-  std::thread thr(Update_Hardware);
-  thr.join();
+  thread th = thread(&GUI::Update, gui);
+  
+  thread thr(Update_Hardware); 
+
+
+  GUILable gl = GUILable(0,0,128,8,gui,"SL_RU");
+  gui->root->AddChild(&gl);
+  string q = "вйцукенгшщзххъфывапролджэячсмитьбю.";
+  while (q!="q")
+    {
+      cout << q;
+      gl.SetText(q);
+      getline(cin, q);
+    }
+  gui->cls();
+  gui->root=0;
+  sleep(5);
+  
   return 0;
 }
 

@@ -23,6 +23,8 @@
 #ifndef _ADAFRUIT_GFX_H
 #define _ADAFRUIT_GFX_H
 
+#include <iostream>
+
 #define swap(a, b) { int16_t t = a; a = b; b = t; }
 
 //class Adafruit_GFX : public Print {
@@ -38,8 +40,9 @@ class Adafruit_GFX {
   virtual void invertDisplay(boolean i);
 	
 	// the printf function
-	void printf( const char * format, ...);
-	void print( const char * string) ;
+  void printf( const char * format, ...); //!< DO NOT USE THIS RELOAD WITH RUSSIAN LETTERS!!1
+  void print( const char * string) ; //!< DO NOT USE THIS WITH RUSSIAN LETTERS!!1
+  void print( const std::string string) ;
 
   // these are 'generic' drawing functions, so we can share them!
   virtual void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);

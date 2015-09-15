@@ -1,7 +1,7 @@
 CXX=g++
-CXXFLAGS=-std=c++0x -lwiringPi -lpthread -g
+CXXFLAGS=-std=c++0x -lwiringPi -lpthread -g -lArduiPi_OLED -Ofast
 LDFLAGS=
-SOURCES=main.cpp hw.cpp
+SOURCES=gui.cpp main.cpp hw.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 BIN=rpb
 
