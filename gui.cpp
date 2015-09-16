@@ -178,6 +178,37 @@ void GUILable::Update(ArduiPi_OLED *oled, int time)
 
 void GUILable::SetText(string str)
 {
+  str = convert_encoding(str, "UTF-8", "CP1251");
   text = str;
   curPos = 0;
+}
+
+
+string convert_encoding(const string& data, const string& from, const string& to)
+{
+   if (data.empty())
+   {
+      return string();
+   }
+   iconv_t convert_hnd = iconv_open(to.c_str(), from.c_str());
+   if (convert_hnd == (iconv_t)(-1))
+     {
+       cout << "error: unable to create convertion descriptor\n";
+       return "";
+     }
+ 
+   char* in_ptr = const_cast<char*>(data.c_str());
+   size_t in_size = data.size();
+   vector<char> outbuf(6 * data.size());
+   char* out_ptr = &outbuf[0];
+   size_t reverse_size = outbuf.size();
+ 
+   size_t result = iconv(convert_hnd, &in_ptr, &in_size, &out_ptr, &reverse_size);
+   iconv_close(convert_hnd);
+   if (result == (size_t)(-1))
+   {
+     cout << "error: unable to convert\n";
+     //return "";
+   }
+   return string(outbuf.data(), outbuf.size() - reverse_size);
 }

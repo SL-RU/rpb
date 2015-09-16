@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 #include <list>
+#include <vector>
+#include <iconv.h>
 #include "ardupi_oled/ArduiPi_OLED_lib.h"
 #include "ardupi_oled/ArduiPi_OLED.h"
 #include "ardupi_oled/Adafruit_GFX.h"
@@ -78,3 +80,4 @@ public:
 };
 
 
+string convert_encoding(const string& data, const string& from, const string& to);

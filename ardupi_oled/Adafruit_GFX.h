@@ -24,6 +24,7 @@
 #define _ADAFRUIT_GFX_H
 
 #include <iostream>
+#include <string>
 
 #define swap(a, b) { int16_t t = a; a = b; b = t; }
 

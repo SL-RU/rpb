@@ -22,9 +22,6 @@
 						Added printf feature
 
  ******************************************************************/
-#include <iostream>
-#include <string>
-#include <glib.h>
 
 #include "./ArduiPi_OLED_lib.h"
 #include "./Adafruit_GFX.h"
@@ -77,20 +74,13 @@ void Adafruit_GFX::print( const char * string)
 
 }
 
+
 // the print function
 void Adafruit_GFX::print( const std::string string) 
 {
-
-  //std::string s = iconv_recode("UTF-8", "CP1251", string);
-
-  GError *error = NULL;
-  unsigned char *str = g_convert(string.c_str(), -1, "utf-8", "cp1251", NULL, NULL, error);
-  
-  
-  int n = s.length();
-  
+  int n = string.length(); 
   for (int i = 0; i < n; i++) {
-    write ( (unsigned char) str[i]);
+    write ( (unsigned char) string[i]);
   }
 }
 
