@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-std=c++0x -lwiringPi -lpthread -g -lArduiPi_OLED -Ofast `pkg-config --cflags --libs glib-2.0`
+CXXFLAGS=-std=c++0x -lwiringPi -lpthread -g -lArduiPi_OLED -Ofast
 LDFLAGS=
 SOURCES=gui.cpp main.cpp hw.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
