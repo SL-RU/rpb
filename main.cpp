@@ -1,69 +1,132 @@
-#include "hw.hpp"
-#include <thread>
-#include <iostream>
-#include <clocale>
-#include "gui.hpp"
+#include "main.hpp"
 
 
-void Init();
-
-GUI *gui;
-GUIRect *gr;
-
-void prt(int p)
+Core::Core()
 {
-  std::cout << p << "\n";
-  gr->x+=3;
+  std::cout<<"Core: begin initialising\n";
+  
+  core = this;
+  InitHardware();
+  InitGUI();
+
+  std::cout<<"Core: core initialized\n";
 }
 
-
-int main(int argc, char *argv[])
+void Core::InitHardware()
 {
-  Init();
-  
-  GButton *Buttons[9];
-  int ButtonPins[] = {13, 12, 14, 11, 5, 2, 0, 4, 3};
+  Init_Hardware();
+  std::cout << "Core: hardware initialization:\n";
+  Buttons = new GButton*[9];
+  Leds = new GLed*[2];
   for (int i = 0; i < 9; i++) {
     Buttons[i] = new GButton(ButtonPins[i], true);
   }
-  GLed *Leds[2];
-  int LedPins[] = {10, 6};
   for (int i = 0; i < 2; i++) {
     Leds[i] = new GLed(LedPins[i], false);
   }
   SetIndicatorLed(Leds[1]);
 
-  Buttons[4]->setOnClick(prt);
-  Leds[0]->set(true);
+  std::cout<<"Core: hardware inited\n";
+  
+  //start thread
+  hardwareThread = new thread(Update_Hardware);
+  std::cout<<"Core: hardware thread started\n";
+}
 
-
+void Core::InitGUI()
+{
+  std::cout << "Core: GUI initialization" << "\n";
   gui = new GUI;
-  gr = new GUIRect(0, 20, 10, 40, gui);
-  gui->root->AddChild(gr);
-  
-  thread th = thread(&GUI::Update, gui);
-  
-  thread thr(Update_Hardware); 
 
+  std::cout<<"Core: gui inited\n";
+  
+  //start thread
+  guiThread = new thread(&GUI::Update, gui);
 
-  GUILable gl = GUILable(0,0,128,8,gui,"SL_RU");
-  gui->root->AddChild(&gl);
-  string q = "вйцукенгшщзххъфывапролджэячсмитьбю.";
+  std::cout<<"Core: gui thread started\n";
+  
+  for (int i = 0; i < 4; i++) {
+    Buttons[i]->setOnClick(__hardwareeventsClickTocorefunctionsparser);
+    Buttons[i]->setOnPress(__hardwareeventsPressTocorefunctionsparser);    
+  }
+
+  std::cout<<"Core: hardware events for gui inited\n";
+}
+void __hardwareeventsClickTocorefunctionsparser(int i)
+{
+  core->GuiInputHWButtonsEventsClickHander(i);
+}
+void __hardwareeventsPressTocorefunctionsparser(int i)
+{
+  core->GuiInputHWButtonsEventsPressHander(i);
+}
+void Core::GuiInputHWButtonsEventsClickHander(int l)
+{
+  INPUT_ACTIONS ia = none;
+  switch (l) {
+  case ButtonPins[0]: {
+    ia = up;
+    break;
+  }
+  case ButtonPins[1]: {
+    ia = ok;
+    break;
+  }
+  case ButtonPins[2]: {
+    ia = down;
+    break;
+  }
+  case ButtonPins[3]: {
+    ia = description;
+    break;
+  }
+  default: break;
+  }
+  gui->Input(ia);
+}
+void Core::GuiInputHWButtonsEventsPressHander(int l)
+{
+  INPUT_ACTIONS ia = none;
+  switch (l) {
+  case ButtonPins[0]: {
+    ia = backw;
+    break;
+  }
+  case ButtonPins[1]: {
+    ia = ok;
+    break;
+  }
+  case ButtonPins[2]: {
+    ia = forw;
+    break;
+  }
+  case ButtonPins[3]: {
+    ia = set;
+    break;
+  }
+  default: break;    
+  }
+  gui->Input(ia);
+}
+
+int main(int argc, char *argv[])
+{
+  cout<<"STARTING\n";
+  cout<<"...\n";
+  Core *cr = new Core();
+  cout<<"Started\n";
+  GUIList *gl = new GUIList(0, 9, 128, 55, cr->gui);
+  cr->gui->root->AddChild(gl);
+  
+  string q = "";
   while (q!="q")
     {
-      cout << q;
-      gl.SetText(q);
       getline(cin, q);
+      gl->AddItem(q, 1);
     }
-  gui->cls();
-  gui->root=0;
-  sleep(5);
-  
+
+  cr->gui->TurnOff();
+  sleep(1);
   return 0;
 }
 
-
-void Init()
-{
-  Init_Hardware();
-}

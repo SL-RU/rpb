@@ -4,6 +4,7 @@
 GUIElement::GUIElement(int X, int Y, GUI* Gui):
   x(X),
   y(Y),
+  tab_priority(0),
   gui(Gui),
   parent(0)
 {
@@ -25,14 +26,17 @@ GUIParent* GUIElement::GetParent()
   return parent;
 }
 
-void GUIElement::Update(ArduiPi_OLED *oled, int time)
-{
-}
+void GUIElement::Update(ArduiPi_OLED *oled, int time){}
+void GUIElement::Input(INPUT_ACTIONS action){}
+void GUIElement::FocusElement(){}
+void GUIElement::ReleaseFocus(){}
 
 GUI::GUI():
   root(new GUIParent(0,0,this)),
   oled(new ArduiPi_OLED()),
-  last_id(0)
+  last_id(0),
+  turnOn(true),
+  tablist(new list<GUIElement*>)
 {
   oled->init(OLED_I2C_RESET,3);
   oled->begin();
@@ -42,6 +46,11 @@ GUI::GUI():
 int GUI::AddElement(GUIElement *el)
 {
   return last_id++;
+}
+
+void GUI::AddElementToTabList(GUIElement*el)
+{
+  tablist->push_back(el);
 }
 
 void GUI::cls()
@@ -54,9 +63,30 @@ void GUI::Update()
 {
   while(1)
     {
-      oled->clearDisplay();
-      root->Update(oled, millis());
-      oled->display();
+      if(turnOn)
+	{
+	  oled->clearDisplay();
+	  root->Update(oled, millis());
+	  oled->display();
+	}
+    }
+}
+
+void GUI::TurnOn()
+{
+  turnOn = true;
+}
+void GUI::TurnOff()
+{
+  turnOn = false;
+  cls();
+}
+
+void GUI::Input(INPUT_ACTIONS action)
+{
+  if(tablist->size()>0)
+    {
+      tablist->front()->Input(action);
     }
 }
 
@@ -111,7 +141,10 @@ GUILable::GUILable(int X, int Y, int W, int H, GUI* Gui, string str):
   curPos(0),
   scrollSpeed(200),
   lastScrollTime(0),
-  lastString("")
+  lastString(""),
+  bgc(0),
+  brc(0),
+  txtc(1)
 {
   
 }
@@ -121,8 +154,10 @@ void GUILable::Update(ArduiPi_OLED *oled, int time)
   int maxLen = w / 6;
   if(text.length() <= maxLen)
     {
+      gui->oled->drawRect(x, y, w, h, brc);
+      oled->fillRect(x, y, w, h, bgc);
       gui->oled->setTextSize(1);
-      gui->oled->setTextColor(WHITE, BLACK);
+      gui->oled->setTextColor(txtc, bgc);
       gui->oled->setCursor(x, y);
       gui->oled->print(text);
       return;
@@ -169,18 +204,224 @@ void GUILable::Update(ArduiPi_OLED *oled, int time)
       }
     }
 
+  gui->oled->drawRect(x, y, w, h, brc);
+  oled->fillRect(x, y, w, h, bgc);
   gui->oled->setTextSize(1);
-  gui->oled->setTextColor(WHITE, BLACK);
+  gui->oled->setTextColor(txtc, bgc);
   gui->oled->setCursor(x, y);
   gui->oled->print(s);
   
 }
 
-void GUILable::SetText(string str)
+
+string GUILable::SetText(string str)
 {
   str = convert_encoding(str, "UTF-8", "CP1251");
   text = str;
   curPos = 0;
+  return str;
+}
+
+string GUILable::SetText(string str, bool convert)
+{
+  if(convert)
+    str = convert_encoding(str, "UTF-8", "CP1251");
+  text = str;
+  curPos = 0;
+  return str;
+}
+
+void GUILable::SetBGColor(short c)
+{
+  bgc = c;
+}
+void GUILable::SetBorderColor(short c)
+{
+  brc = c;
+}
+void GUILable::SetTextColor(short c)
+{
+  txtc = c;
+}
+
+
+
+GUIList::GUIList(int X, int Y, int W, int H, GUI* Gui):
+  GUIElement(X, Y, Gui),
+  data(new vector<GUIListItem*>),
+  w(W),
+  h(H),
+  curPos(0),
+  lables(new vector<GUILable*>)
+{
+  tab_priority = 1;
+  gui->AddElementToTabList(this);
+  init_children();
+}
+
+int GUIList::AddItem(string s, int i)
+{
+  data->push_back(new GUIListItem(s, i));
+}
+
+void GUIList::init_children()
+{
+  linesCount = h/9;
+  std::cout << "GUIList lines: " << linesCount << "\n";
+  for (int i = 0; i < linesCount; i++) {
+    lables->push_back(new GUILable(x, y + i*9, w, 9, gui, ""));
+  }
+}
+
+void GUIList::Update(ArduiPi_OLED* oled, int time)
+{
+  oled->drawLine(x+w-1, y, x+w-1, y+h, 1);
+  if(lables->size() == 0)
+    return;
+  if(data->size() == 0)
+    return;
+  int f = 1, b = 1, cu = 1, ds= data->size(), seli = 0;
+  if(curPos < 0)
+    {
+      curPos = 0;
+    }
+  if(curPos > data->size())
+    {
+      curPos = data->size();
+    }
+
+  vector<GUIListItem*> da;
+  vector<GUIListItem*>::iterator ite;
+  da.push_back(data->at(curPos));
+  for (int i = 0; i < lables->size() - 1; i++)
+    {
+      if(cu)
+	{
+	  if(curPos + f < ds)
+	    {
+	      da.push_back(data->at(curPos + f));
+	      f++;
+	    }
+	  else
+	    {
+	      if(curPos - b >= 0)
+		{
+		  i--;
+		}
+	      else
+		{
+		  da.push_back(0);
+		}
+	    }
+	  cu = 0;
+	}
+      else
+	{
+	  if(curPos - b >= 0)
+	    {
+	      seli ++;
+	      ite = da.begin();
+	      da.insert(ite, data->at(curPos - b));
+	      b++;
+	    }
+	  else
+	    {
+	      if(curPos + f < ds)
+		{
+		  i--;
+		}
+	      else
+		{
+		  da.push_back(0);
+		}
+	    }
+	  cu = 1;    
+	}
+    }
+
+  int i = 0;
+  for (GUILable *lb : *lables)
+    {
+      if(da[i] != 0)
+	{
+	  if(lb->GetText() != da[i]->txt)
+	    {
+	      da[i]->txt = lb->SetText(da[i]->txt, !da[i]->converted);
+	      da[i]->converted = true;
+	    }
+	}
+      if(seli == i)
+	{
+	  lb->SetBGColor(1);
+	  lb->SetTextColor(0);
+	  lb->SetBorderColor(1);
+	}
+      else
+	{
+	  lb->SetBGColor(0);
+	  lb->SetTextColor(1);
+	  lb->SetBorderColor(0);
+	} 
+      lb->Update(oled, time);
+      i++;
+    }
+
+  oled->drawLine(x+w-1, y, x+w-1, y+h, 1);
+  if(lables->size() < data->size())
+    {
+      oled->drawLine(x+w-2, y, x+w-2, y+h, 0);
+      int po = h * (curPos) / data->size();
+      oled->drawLine(x+w-2, y + po, x+w-2, y+h, 1);
+    }
+}
+
+void GUIList::Input(INPUT_ACTIONS ia)
+{
+  if(ia == up)
+    {
+      curPos--;
+      if(curPos < 0)
+	{
+	  curPos = data->size() - 1;
+	}
+    }
+  if(ia == down)
+    {
+      curPos++;
+      if(curPos >= data->size())
+	{
+	  curPos = 0;
+	}
+    }
+  if(ia == ok)
+    {
+      if(onClick != 0 && data->size() > 0)
+	onClick(data->at(curPos)->id, data->at(curPos)->txt);
+    }
+}
+
+GUIListItem::GUIListItem():
+  txt(""),
+  id(0),
+  priority(0),
+  converted(false)
+{
+}
+
+GUIListItem::GUIListItem(string t, int i):
+  txt(t),
+  id(i),
+  priority(0),
+  converted(false)
+{
+}
+
+GUIListItem::GUIListItem(string t, int i, int prior):
+  txt(t),
+  id(i),
+  priority(prior),
+  converted(false)
+{
 }
 
 
