@@ -26,6 +26,21 @@ GUIParent* GUIElement::GetParent()
   return parent;
 }
 
+int GUIElement::getX()
+{
+  if(parent != 0)
+    return x + parent->getX();
+  else
+    return x;
+}
+int GUIElement::getY()
+{
+  if(parent != 0)
+    return y + parent->getY();
+  else
+    return y;
+}
+
 void GUIElement::Update(ArduiPi_OLED *oled, int time){}
 void GUIElement::Input(INPUT_ACTIONS action){}
 void GUIElement::FocusElement(){}
@@ -129,7 +144,7 @@ GUIRect::GUIRect(int X, int Y, int W, int H, GUI* Gui):
 }
 void GUIRect::Update(ArduiPi_OLED *oled, int time)
 {
-  gui->oled->drawRect(x, y, w, h, 1);
+  gui->oled->drawRect(getX(), getY(), w, h, 1);
 }
 
 
@@ -154,11 +169,11 @@ void GUILable::Update(ArduiPi_OLED *oled, int time)
   int maxLen = w / 6;
   if(text.length() <= maxLen)
     {
-      gui->oled->drawRect(x, y, w, h, brc);
-      oled->fillRect(x, y, w, h, bgc);
+      gui->oled->drawRect(getX(), getY(), w, h, brc);
+      oled->fillRect(getX(), getY(), w, h, bgc);
       gui->oled->setTextSize(1);
       gui->oled->setTextColor(txtc, bgc);
-      gui->oled->setCursor(x, y);
+      gui->oled->setCursor(getX(), getY());
       gui->oled->print(text);
       return;
     }
@@ -204,11 +219,11 @@ void GUILable::Update(ArduiPi_OLED *oled, int time)
       }
     }
 
-  gui->oled->drawRect(x, y, w, h, brc);
-  oled->fillRect(x, y, w, h, bgc);
+  gui->oled->drawRect(getX(), getY(), w, h, brc);
+  oled->fillRect(getX(), getY(), w, h, bgc);
   gui->oled->setTextSize(1);
   gui->oled->setTextColor(txtc, bgc);
-  gui->oled->setCursor(x, y);
+  gui->oled->setCursor(getX(), getY());
   gui->oled->print(s);
   
 }
@@ -247,7 +262,7 @@ void GUILable::SetTextColor(short c)
 
 
 GUIList::GUIList(int X, int Y, int W, int H, GUI* Gui):
-  GUIElement(X, Y, Gui),
+  GUIParent(X, Y, Gui),
   data(new vector<GUIListItem*>),
   w(W),
   h(H),
@@ -268,14 +283,18 @@ void GUIList::init_children()
 {
   linesCount = h/9;
   std::cout << "GUIList lines: " << linesCount << "\n";
+  GUILable *lb;
   for (int i = 0; i < linesCount; i++) {
-    lables->push_back(new GUILable(x, y + i*9, w, 9, gui, ""));
+    lb = new GUILable(0, i*9, w, 9, gui, "");
+    lb->SetParent(this);
+    lables->push_back(lb);
   }
 }
 
 void GUIList::Update(ArduiPi_OLED* oled, int time)
 {
-  oled->drawLine(x+w-1, y, x+w-1, y+h, 1);
+
+  oled->drawLine(getX()+w-1, getY(), getX()+w-1, h+getY(), 1);
   if(lables->size() == 0)
     return;
   if(data->size() == 0)
@@ -366,12 +385,12 @@ void GUIList::Update(ArduiPi_OLED* oled, int time)
       i++;
     }
 
-  oled->drawLine(x+w-1, y, x+w-1, y+h, 1);
+  oled->drawLine(getX()+w-1, getY(), getX()+w-1, getY()+h, 1);
   if(lables->size() < data->size())
     {
-      oled->drawLine(x+w-2, y, x+w-2, y+h, 0);
+      oled->drawLine(getX()+w-2, getY(), getX()+w-2, getY()+h, 0);
       int po = h * (curPos) / data->size();
-      oled->drawLine(x+w-2, y + po, x+w-2, y+h, 1);
+      oled->drawLine(getX()+w-2, getY() + po, getX()+w-2, getY()+h, 1);
     }
 }
 
@@ -423,6 +442,20 @@ GUIListItem::GUIListItem(string t, int i, int prior):
   converted(false)
 {
 }
+
+
+GUIBitmap::GUIBitmap(int X, int Y, int W, int H, unsigned char* BITMap, GUI* Gui):
+  GUIElement(X,Y,Gui),
+  bitmap(BITMap),
+  w(W),
+  h(H)
+{
+}
+void GUIBitmap::Update(ArduiPi_OLED* oled, int time)
+{
+  oled->drawBitmap(x, y, bitmap, w, h, 1);
+}
+
 
 
 string convert_encoding(const string& data, const string& from, const string& to)

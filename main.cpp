@@ -5,7 +5,7 @@ Core::Core()
 {
   std::cout<<"Core: begin initialising\n";
   
-  core = this;
+  _core = this;
   InitHardware();
   InitGUI();
 
@@ -54,11 +54,11 @@ void Core::InitGUI()
 }
 void __hardwareeventsClickTocorefunctionsparser(int i)
 {
-  core->GuiInputHWButtonsEventsClickHander(i);
+  _core->GuiInputHWButtonsEventsClickHander(i);
 }
 void __hardwareeventsPressTocorefunctionsparser(int i)
 {
-  core->GuiInputHWButtonsEventsPressHander(i);
+  _core->GuiInputHWButtonsEventsPressHander(i);
 }
 void Core::GuiInputHWButtonsEventsClickHander(int l)
 {
@@ -109,6 +109,8 @@ void Core::GuiInputHWButtonsEventsPressHander(int l)
   gui->Input(ia);
 }
 
+
+
 int main(int argc, char *argv[])
 {
   cout<<"STARTING\n";
@@ -117,6 +119,17 @@ int main(int argc, char *argv[])
   cout<<"Started\n";
   GUIList *gl = new GUIList(0, 9, 128, 55, cr->gui);
   cr->gui->root->AddChild(gl);
+
+  unsigned char bm[] = {
+    0b11101110, 0b11100001,
+    0b10101010, 0b10100101,
+    0b11101110, 0b11100011,
+    0b11001000, 0b10100101,
+    0b10101000, 0b11100001
+    };
+
+  GUIBitmap *bml = new GUIBitmap(0, 0, 16, 5, bm, cr->gui);
+  cr->gui->root->AddChild(bml);
   
   string q = "";
   while (q!="q")

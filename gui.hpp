@@ -38,6 +38,8 @@ public:
   GUIParent* GetParent();
   void SetParent(GUIParent*);  //!< change parent and call call old parent's remove child and new parent's add child functions.
   int x, y;
+  int getX();
+  int getY();
   unsigned int tab_priority; //! if tab_priority == 0, then element is not in tab queue.
 protected:
   GUI *gui;
@@ -119,7 +121,7 @@ public:
   bool converted;
 };
 
-class GUIList : public GUIElement
+class GUIList : public GUIParent
 {
 public:
   GUIList(int X, int Y, int W, int H, GUI *Gui);
@@ -140,5 +142,15 @@ private:
   void init_children();
 };
 
+class GUIBitmap : public GUIElement
+{
+public:
+  GUIBitmap(int X, int Y, int W, int H, unsigned char *BITMap, GUI *Gui);
+  void Update(ArduiPi_OLED *oled, int time);
+  void SetBitmap(int W, int H, unsigned char *BITMap);
+private:
+  unsigned char *bitmap;
+  int w, h;
+};
 
 string convert_encoding(const string& data, const string& from, const string& to);
