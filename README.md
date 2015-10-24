@@ -14,3 +14,5 @@ cd ..
 make #make this project
 ```
 
+#photos
+https://yadi.sk/d/p_5iGalTjyGfn ( or alternative link: http://1drv.ms/1NsV12S  )
